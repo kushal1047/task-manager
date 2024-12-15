@@ -1,0 +1,57 @@
+# === Node Modules ===
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# === Logs ===
+logs
+*.log
+*.log.*
+log/
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# === Environment Variables ===
+.env
+.env.*.local
+.env.local
+
+# === Build Output ===
+# React build folder
+client/build/
+
+# Server build (if using Babel or TypeScript)
+dist/
+build/
+
+# === OS / IDE Files ===
+.DS_Store
+Thumbs.db
+
+# === VSCode Settings ===
+.vscode/
+.idea/
+
+# === MongoDB Local DB Dumps ===
+dump/
+
+# === Testing ===
+coverage/
+*.lcov
+jest-cache/
+.nyc_output/
+
+# === Misc ===
+*.tgz
+*.bak
+*.swp
+*.swo
+
+# === Optional: PM2 Logs / PIDs ===
+pids/
+*.pid
+*.pid.lock
