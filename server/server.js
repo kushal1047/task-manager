@@ -16,3 +16,11 @@ mongoose
   })
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error(err));
+
+// Routes
+const tasksRouter = require("./routes/tasks");
+app.use("/api/tasks", tasksRouter);
+
+// Start server
+const port = process.env.PORT || 5000;
+app.listen(port, () => console.log(`Server running on port ${port}`));
