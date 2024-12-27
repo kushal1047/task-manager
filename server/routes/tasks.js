@@ -15,3 +15,21 @@ router.post("/", async (req, res) => {
   const saved = await newTask.save();
   res.status(201).json(saved);
 });
+
+// PUT toggle completion
+router.put("/:id", async (req, res) => {
+  const updated = await Task.findByIdAndUpdate(
+    req.params.id,
+    { completed: req.body.completed },
+    { new: true }
+  );
+  res.json(updated);
+});
+
+// DELETE a task
+router.delete("/:id", async (req, res) => {
+  await Task.findByIdAndDelete(req.params.id);
+  res.status(204).end();
+});
+
+module.exports = router;
