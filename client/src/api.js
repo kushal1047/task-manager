@@ -1,4 +1,3 @@
-// client/src/api.js
 import axios from "axios";
 
 export const fetchTasks = () => axios.get("/api/tasks");
