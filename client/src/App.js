@@ -19,3 +19,12 @@ export default function App() {
     const res = await createTask(title);
     setTasks([res.data, ...tasks]);
   };
+  const handleToggle = async (id, completed) => {
+    const res = await updateTask(id, completed);
+    setTasks(tasks.map(t => (t._id === id ? res.data : t)));
+  };
+
+  const handleDelete = async id => {
+    await deleteTask(id);
+    setTasks(tasks.filter(t => t._id !== id));
+  };
