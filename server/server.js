@@ -17,8 +17,13 @@ mongoose
   .catch((err) => console.error(err));
 
 // Routes
+const authRouter = require("./routes/auth");
+app.use("/api/auth", authRouter);
+
 const tasksRouter = require("./routes/tasks");
-app.use("/api/tasks", tasksRouter);
+// protect task routes
+const authMiddleware = require("./middleware/auth");
+app.use("/api/tasks", authMiddleware, tasksRouter);
 
 // Start server
 const port = process.env.PORT || 5000;
