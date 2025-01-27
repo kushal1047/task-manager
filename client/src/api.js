@@ -8,6 +8,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export const registerUser = (creds) =>
+  api.post("/auth/register", creds).then((r) => r.data);
+export const loginUser = (creds) =>
+  api.post("/auth/login", creds).then((r) => r.data);
 export const fetchTasks = () => api.get("/tasks");
 export const createTask = (title) => api.post("/tasks", { title });
 export const updateTask = (id, completed) =>
