@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { fetchTasks, createTask, updateTask, deleteTask } from "./api";
+import {
+  fetchTasks,
+  createTask,
+  updateTask,
+  deleteTask,
+  validateToken,
+} from "./api";
+import { api } from "./api";
 import TaskForm from "./components/TaskForm";
 import TaskList from "./components/TaskList";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -9,18 +16,22 @@ import Login from "./components/Login";
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
-  const [user, setUser] = useState(null);
+  const [isValid, setIsValid] = useState(null);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("user"));
-    if (saved) setUser(saved);
-    loadTasks();
-  }, []);
+    const token = localStorage.getItem("token");
+    (async () => {
+      if (!token) return setIsValid(false);
 
-  const handleAuth = (user) => {
-    localStorage.setItem("user", JSON.stringify(user));
-    setUser(user);
-  };
+      try {
+        const res = await validateToken();
+        setIsValid(res.status === 200);
+      } catch {
+        setIsValid(false);
+      }
+    })();
+    if (token) loadTasks();
+  }, [isValid]);
 
   const loadTasks = async () => {
     const res = await fetchTasks();
@@ -40,15 +51,21 @@ export default function App() {
     await deleteTask(id);
     setTasks(tasks.filter((t) => t._id !== id));
   };
+  const handleAuth = () => {
+    setIsValid(true); // triggers useEffect again
+  };
   return (
     <Router>
       <Routes>
-        <Route path="/register" element={<Register onAuth={handleAuth} />} />
-        <Route path="/login" element={<Login onAuth={handleAuth} />} />
+        <Route
+          path="/register"
+          element={<Register onRegister={handleAuth} />}
+        />
+        <Route path="/login" element={<Login onLogin={handleAuth} />} />
         <Route
           path="/"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute isValid>
               <div className="container">
                 <h1>Task Manager</h1>
                 <TaskForm onAdd={handleAdd} />
