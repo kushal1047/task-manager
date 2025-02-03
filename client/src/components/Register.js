@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { registerUser } from "../api";
+import { useNavigate } from "react-router-dom";
 
-export default function Register({ onRegister }) {
+export default function Register() {
   const [form, setForm] = useState({ username: "", password: "" });
   const handleChange = (e) => setForm({ ...form, [e.name]: e.value });
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { token, user } = await registerUser(form);
+    const { token } = await registerUser(form);
     localStorage.setItem("token", token);
-    onRegister();
+    navigate("/");
   };
 
   return (

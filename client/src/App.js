@@ -7,7 +7,6 @@ import {
   deleteTask,
   validateToken,
 } from "./api";
-import { api } from "./api";
 import TaskForm from "./components/TaskForm";
 import TaskList from "./components/TaskList";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -24,14 +23,15 @@ export default function App() {
       if (!token) return setIsValid(false);
 
       try {
-        const res = await validateToken();
-        setIsValid(res.status === 200);
+        const { valid } = await validateToken();
+        console.log(valid);
+        setIsValid(valid);
       } catch {
         setIsValid(false);
       }
     })();
     if (token) loadTasks();
-  }, [isValid]);
+  }, []);
 
   const loadTasks = async () => {
     const res = await fetchTasks();
@@ -51,17 +51,12 @@ export default function App() {
     await deleteTask(id);
     setTasks(tasks.filter((t) => t._id !== id));
   };
-  const handleAuth = () => {
-    setIsValid(true); // triggers useEffect again
-  };
+
   return (
     <Router>
       <Routes>
-        <Route
-          path="/register"
-          element={<Register onRegister={handleAuth} />}
-        />
-        <Route path="/login" element={<Login onLogin={handleAuth} />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
         <Route
           path="/"
           element={
