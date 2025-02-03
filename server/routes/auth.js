@@ -47,4 +47,10 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.get("/validate-token", authMiddleware, (req, res) => {
+  res.json({
+    valid: true,
+  });
+});
+
 module.exports = router;
