@@ -26,6 +26,23 @@ code {
   font-family: Arial, sans-serif;
 }
 
+.logout {
+  position: fixed; /* stays in place even when scrolling */
+  top: 20px;
+  right: 20px;
+  padding: 10px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.logout:hover {
+  background-color: #0056b3;
+}
+
 input[type="text"] {
   padding: 0.5rem;
   width: 70%;

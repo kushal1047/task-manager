@@ -7,16 +7,14 @@ import {
   deleteTask,
   validateToken,
 } from "./api";
-import TaskForm from "./components/TaskForm";
-import TaskList from "./components/TaskList";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Register from "./components/Register";
 import Login from "./components/Login";
+import TaskView from "./components/TaskView";
 
 export default function App() {
   const [tasks, setTasks] = useState([]);
   const [isValid, setIsValid] = useState(null);
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     (async () => {
@@ -32,6 +30,10 @@ export default function App() {
     })();
     if (token) loadTasks();
   }, []);
+
+  const handleLogin = () => {
+    setIsValid(true);
+  };
 
   const loadTasks = async () => {
     const res = await fetchTasks();
@@ -51,25 +53,21 @@ export default function App() {
     await deleteTask(id);
     setTasks(tasks.filter((t) => t._id !== id));
   };
-
   return (
     <Router>
       <Routes>
         <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login onLogin={handleLogin} />} />
         <Route
           path="/"
           element={
-            <ProtectedRoute isValid>
-              <div className="container">
-                <h1>Task Manager</h1>
-                <TaskForm onAdd={handleAdd} />
-                <TaskList
-                  tasks={tasks}
-                  onToggle={handleToggle}
-                  onDelete={handleDelete}
-                />
-              </div>
+            <ProtectedRoute isValid={isValid}>
+              <TaskView
+                tasks={tasks}
+                handleAdd={handleAdd}
+                handleToggle={handleToggle}
+                handleDelete={handleDelete}
+              />
             </ProtectedRoute>
           }
         />

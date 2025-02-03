@@ -11,7 +11,7 @@ export default function Register() {
     e.preventDefault();
     const { token } = await registerUser(form);
     localStorage.setItem("token", token);
-    navigate("/");
+    navigate("/login");
   };
 
   return (

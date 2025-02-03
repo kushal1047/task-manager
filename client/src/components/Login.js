@@ -2,7 +2,7 @@ import { useState } from "react";
 import { loginUser } from "../api";
 import { useNavigate } from "react-router-dom";
 
-export default function Login() {
+export default function Login({ onLogin }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", password: "" });
   const handleChange = (e) => setForm({ ...form, [e.name]: e.value });
@@ -10,6 +10,7 @@ export default function Login() {
     e.preventDefault();
     const { token } = await loginUser(form);
     localStorage.setItem("token", token);
+    onLogin();
     navigate("/");
   };
 
