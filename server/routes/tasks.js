@@ -2,10 +2,16 @@ const express = require("express");
 const router = express.Router();
 const Task = require("../models/Task");
 
-// GET all tasks
-router.get("/", async (req, res) => {
-  const tasks = await Task.find().sort({ createdAt: -1 });
-  res.json(tasks);
+// GET all tasks for the logged-in user
+router.get("/", auth, async (req, res) => {
+  try {
+    const tasks = await Task.find({ user: req.user.id })
+      .sort({ createdAt: -1 })
+      .lean();
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST a new task
