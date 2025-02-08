@@ -14,12 +14,17 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
-// POST a new task
-router.post("/", async (req, res) => {
-  const { title } = req.body;
-  const newTask = new Task({ title });
-  const saved = await newTask.save();
-  res.status(201).json(saved);
+// POST a new task for this user
+router.post("/", auth, async (req, res) => {
+  try {
+    const newTask = await Task.create({
+      user: req.user.id,
+      title: req.body.title,
+    });
+    res.status(201).json(newTask);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // PUT toggle completion
