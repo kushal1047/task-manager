@@ -42,10 +42,18 @@ router.put("/:id", auth, async (req, res) => {
   }
 });
 
-// DELETE a task
-router.delete("/:id", async (req, res) => {
-  await Task.findByIdAndDelete(req.params.id);
-  res.status(204).end();
+// DELETE a task—only if it belongs to the user
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const deleted = await Task.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user.id,
+    });
+    if (!deleted) return res.status(404).json({ msg: "Task not found" });
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
