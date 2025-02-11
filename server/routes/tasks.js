@@ -27,14 +27,19 @@ router.post("/", auth, async (req, res) => {
   }
 });
 
-// PUT toggle completion
-router.put("/:id", async (req, res) => {
-  const updated = await Task.findByIdAndUpdate(
-    req.params.id,
-    { completed: req.body.completed },
-    { new: true }
-  );
-  res.json(updated);
+// PUT toggle completion—but only if the task belongs to this user
+router.put("/:id", auth, async (req, res) => {
+  try {
+    const updated = await Task.findOneAndUpdate(
+      { _id: req.params.id, user: req.user.id },
+      { completed: req.body.completed },
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json({ msg: "Task not found" });
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // DELETE a task
