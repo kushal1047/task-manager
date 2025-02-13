@@ -28,11 +28,18 @@ export default function App() {
         setIsValid(false);
       }
     })();
-    if (token) loadTasks();
   }, []);
+
+  useEffect(() => {
+    if (isValid === true) {
+      loadTasks();
+    }
+  }, [isValid]);
 
   const handleLogin = () => {
     setIsValid(true);
+    setTasks([]);
+    loadTasks();
   };
 
   const loadTasks = async () => {

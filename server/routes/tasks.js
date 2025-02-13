@@ -3,7 +3,7 @@ const router = express.Router();
 const Task = require("../models/Task");
 
 // GET all tasks for the logged-in user
-router.get("/", auth, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const tasks = await Task.find({ user: req.user.id })
       .sort({ createdAt: -1 })
@@ -15,7 +15,7 @@ router.get("/", auth, async (req, res) => {
 });
 
 // POST a new task for this user
-router.post("/", auth, async (req, res) => {
+router.post("/", async (req, res) => {
   try {
     const newTask = await Task.create({
       user: req.user.id,
@@ -28,7 +28,7 @@ router.post("/", auth, async (req, res) => {
 });
 
 // PUT toggle completion—but only if the task belongs to this user
-router.put("/:id", auth, async (req, res) => {
+router.put("/:id", async (req, res) => {
   try {
     const updated = await Task.findOneAndUpdate(
       { _id: req.params.id, user: req.user.id },
@@ -43,7 +43,7 @@ router.put("/:id", auth, async (req, res) => {
 });
 
 // DELETE a task—only if it belongs to the user
-router.delete("/:id", auth, async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
     const deleted = await Task.findOneAndDelete({
       _id: req.params.id,
