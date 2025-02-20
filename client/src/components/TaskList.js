@@ -1,7 +1,12 @@
 import TaskItem from "./TaskItem";
 
 export default function TaskList({ tasks, onToggle, onDelete }) {
-  if (!tasks.length) return <p>No tasks yet!</p>;
+  if (!tasks.length)
+    return (
+      <p className="text-center text-gray-500 font-medium">
+        No tasks yet. You're free as a bird 🐦
+      </p>
+    );
 
   return (
     <ul>
