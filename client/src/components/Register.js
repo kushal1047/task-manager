@@ -3,7 +3,13 @@ import { registerUser } from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function Register() {
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    username: "",
+    password: "",
+  });
+  const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) =>
@@ -12,9 +18,11 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { token } = await registerUser(form);
-      localStorage.setItem("token", token);
-      navigate("/login");
+      await registerUser(form);
+      setSuccess(true);
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
     } catch (err) {
       console.error(err);
       // Optional: display error to user
@@ -30,6 +38,44 @@ export default function Register() {
         <h2 className="text-3xl font-semibold text-center text-indigo-600 mb-6">
           Register
         </h2>
+
+        <div className="mb-4">
+          <label
+            htmlFor="firstName"
+            className="block text-gray-700 font-medium mb-1"
+          >
+            FirstName
+          </label>
+          <input
+            id="firstName"
+            name="firstName"
+            type="text"
+            value={form.firstName}
+            onChange={handleChange}
+            placeholder="Your first name..."
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label
+            htmlFor="lastName"
+            className="block text-gray-700 font-medium mb-1"
+          >
+            LastName
+          </label>
+          <input
+            id="lastName"
+            name="lastName"
+            type="text"
+            value={form.lastName}
+            onChange={handleChange}
+            placeholder="Your last name..."
+            required
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
+        </div>
 
         <div className="mb-4">
           <label
@@ -75,6 +121,13 @@ export default function Register() {
         >
           Register
         </button>
+
+        {success && (
+          <p className="text-sm font-semibold text-green-500 mt-2">
+            Registeration Successful.{" "}
+            <span className="text-gray-500">Redirecting to login...</span>
+          </p>
+        )}
 
         <p className="text-center text-sm text-gray-500 mt-4">
           Already have an account?{" "}
