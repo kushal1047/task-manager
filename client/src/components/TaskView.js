@@ -9,9 +9,11 @@ export default function TaskView({
   handleDelete,
 }) {
   const navigate = useNavigate();
+  const name = localStorage.getItem("name");
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("name");
     navigate("/login");
   };
 
@@ -29,6 +31,9 @@ export default function TaskView({
       <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md p-6">
         <h1 className="text-3xl font-bold text-indigo-600 mb-6 text-center">
           Task Manager
+        </h1>
+        <h1 className="text-xl font-medium text-indigo-600 mb-2">
+          Hi {name}, let's remember to...
         </h1>
         <TaskForm onAdd={handleAdd} />
         <TaskList
