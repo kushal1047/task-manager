@@ -1,20 +1,20 @@
 export default function TaskItem({ task, onToggle, onDelete }) {
   return (
-    <li className="flex items-center justify-between bg-gray-50 p-3 rounded mb-2 shadow-sm">
-      <div className="flex items-center gap-3">
+    <li className="flex justify-between items-start bg-gray-50 p-3 rounded mb-2 shadow-sm">
+      <div className="flex gap-3">
         <input
           type="checkbox"
           checked={task.completed}
           onChange={() => onToggle(task._id, !task.completed)}
-          className="h-5 w-5 accent-indigo-500"
+          className="h-6 w-6 shrink-0 accent-indigo-500"
         />
-        <span
-          className={`text-lg ${
+        <p
+          className={`text-lg leading-tight font-medium ${
             task.completed ? "line-through text-gray-400" : "text-gray-800"
           }`}
         >
           {task.title}
-        </span>
+        </p>
       </div>
       <button
         onClick={() => onDelete(task._id)}

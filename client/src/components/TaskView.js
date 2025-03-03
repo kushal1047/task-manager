@@ -18,8 +18,8 @@ export default function TaskView({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-tr from-indigo-100 to-white px-4 py-6">
-      <div className="flex justify-end mb-4">
+    <div className="min-h-screen bg-gradient-to-tr from-indigo-100 to-white px-2 py-6">
+      <div className="flex justify-end mb-8">
         <button
           onClick={handleLogout}
           className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
@@ -32,8 +32,8 @@ export default function TaskView({
         <h1 className="text-3xl font-bold text-indigo-600 mb-6 text-center">
           My TO-DOs
         </h1>
-        <h1 className="text-xl text-indigo-600 mb-2">
-          Hi {name}, let's remember to...
+        <h1 className="text-md text-indigo-600 mb-2">
+          Hi <span className="font-bold">{name}</span>, let's remember to...
         </h1>
         <TaskForm onAdd={handleAdd} />
         <TaskList
