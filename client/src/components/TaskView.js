@@ -28,7 +28,7 @@ export default function TaskView({
         </button>
       </div>
 
-      <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md p-6">
+      <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md py-6 px-3">
         <h1 className="text-3xl font-bold text-indigo-600 mb-6 text-center">
           My TO-DOs
         </h1>
