@@ -29,8 +29,8 @@ export default function TaskView({
       </div>
 
       <div className="max-w-xl mx-auto bg-white rounded-xl shadow-md py-6 px-3">
-        <h1 className="text-3xl font-bold text-indigo-600 mb-6 text-center">
-          My TO-DOs
+        <h1 className="italic text-3xl font-bold text-indigo-600 mb-6 text-center">
+          Get it Done
         </h1>
         <h1 className="text-md text-indigo-600 mb-2">
           Hi <span className="font-bold">{name}</span>, let's remember to...
