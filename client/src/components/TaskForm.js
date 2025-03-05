@@ -17,7 +17,7 @@ export default function TaskForm({ onAdd }) {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Add a new task..."
-        className="flex-1 px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
+        className="flex-1 px-4 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
       />
       <button
         type="submit"
