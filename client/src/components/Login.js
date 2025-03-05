@@ -23,10 +23,10 @@ export default function Login({ onLogin }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-white px-2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-white px-3">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg"
+        className="w-full max-w-md py-8 px-4 bg-white shadow-lg rounded-lg"
       >
         <h2 className="text-3xl font-semibold text-center text-indigo-600 mb-6">
           Sign In
