@@ -7,10 +7,7 @@ beforeAll(async () => {
   mongo = await MongoMemoryServer.create();
   const uri = mongo.getUri();
 
-  await mongoose.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  await mongoose.connect(uri);
 });
 
 beforeEach(async () => {
@@ -20,5 +17,5 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await mongoose.connection.close();
-  await mongo.stop();
+  if (mongo) await mongo.stop();
 });
