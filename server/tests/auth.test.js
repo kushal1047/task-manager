@@ -2,6 +2,7 @@ require("./setup");
 const request = require("supertest");
 const app = require("../server");
 const User = require("../models/User");
+const bcrypt = require("bcryptjs");
 
 describe("Auth Routes", () => {
   it("registers a new user", async () => {
@@ -25,10 +26,52 @@ describe("Auth Routes", () => {
     });
 
     const res = await request(app).post("/api/auth/register").send({
+      firstName: "testFirst",
+      lastName: "testLast",
       username: "tester12",
       password: "secret123",
     });
 
     expect(res.statusCode).toBe(400);
+  });
+
+  it("logs in a user", async () => {
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash("secret", salt);
+    await User.create({
+      firstName: "testFirst",
+      lastName: "testLast",
+      username: "tester12",
+      password: hash,
+    });
+
+    const res = await request(app).post("/api/auth/login").send({
+      username: "tester12",
+      password: "secret",
+    });
+
+    console.log(res.body);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.token).toBeDefined();
+    expect(res.body.user.username).toBe("tester12");
+  });
+
+  it("validates login", async () => {
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash("secret", salt);
+    await User.create({
+      firstName: "testFirst",
+      lastName: "testLast",
+      username: "tester12",
+      password: hash,
+    });
+
+    const res = await request(app).post("/api/auth/login").send({
+      username: "tester12",
+      password: "secret12",
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.msg).toBe("Invalid credentials");
   });
 });
