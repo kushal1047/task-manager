@@ -74,4 +74,27 @@ describe("Auth Routes", () => {
     expect(res.statusCode).toBe(400);
     expect(res.body.msg).toBe("Invalid credentials");
   });
+
+  it("returns valid: true for valid token", async () => {
+    // Create a test user
+    const user = await User.create({
+      firstName: "testFirst",
+      lastName: "testLast",
+      username: "authTester",
+      password: "secret123",
+    });
+
+    // Create a valid JWT
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    // Call the protected route
+    const res = await request(app)
+      .get("/api/auth/validate-token")
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.valid).toBe(true);
+  });
 });
