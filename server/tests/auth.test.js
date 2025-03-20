@@ -3,6 +3,7 @@ const request = require("supertest");
 const app = require("../server");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 describe("Auth Routes", () => {
   it("registers a new user", async () => {
@@ -49,8 +50,6 @@ describe("Auth Routes", () => {
       username: "tester12",
       password: "secret",
     });
-
-    console.log(res.body);
     expect(res.statusCode).toBe(200);
     expect(res.body.token).toBeDefined();
     expect(res.body.user.username).toBe("tester12");
@@ -96,5 +95,12 @@ describe("Auth Routes", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.valid).toBe(true);
+  });
+
+  it("rejects request with no token", async () => {
+    const res = await request(app).get("/api/auth/validate-token");
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.msg).toBe("No token, auth denied");
   });
 });
