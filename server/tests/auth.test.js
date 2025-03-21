@@ -103,4 +103,13 @@ describe("Auth Routes", () => {
     expect(res.statusCode).toBe(401);
     expect(res.body.msg).toBe("No token, auth denied");
   });
+
+  it("rejects request with invalid token", async () => {
+    const res = await request(app)
+      .get("/api/auth/validate-token")
+      .set("Authorization", `Bearer invalidtoken123`);
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.msg).toBe("Token invalid");
+  });
 });
