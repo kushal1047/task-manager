@@ -5,7 +5,12 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 
 const getToken = async () => {
-  const user = await User.create({ username: "tester", password: "hash" });
+  const user = await User.create({
+    firstName: "testFirst",
+    lastName: "testLast",
+    username: "tester",
+    password: "hash",
+  });
   return jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 };
 
