@@ -47,4 +47,56 @@ describe("Login component", () => {
     expect(usernameInput.value).toBe("testuser");
     expect(passwordInput.value).toBe("password123");
   });
+
+  it("calls loginUser and navigates on successful login", async () => {
+    const mockUser = { firstName: "Jane" };
+    const mockToken = "mockToken123";
+    loginUser.mockResolvedValueOnce({ token: mockToken, user: mockUser });
+
+    setup();
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "janedoe" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "password123" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+
+    await waitFor(() =>
+      expect(loginUser).toHaveBeenCalledWith({
+        username: "janedoe",
+        password: "password123",
+      })
+    );
+
+    expect(localStorage.getItem("token")).toBe(mockToken);
+    expect(localStorage.getItem("name")).toBe("Jane");
+
+    await waitFor(() => expect(mockOnLogin).toHaveBeenCalled());
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+  });
+
+  it("handles login errors gracefully", async () => {
+    loginUser.mockRejectedValueOnce(new Error("Invalid credentials"));
+
+    setup();
+
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: "wronguser" },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: "wrongpass" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /login/i }));
+
+    await waitFor(() => expect(loginUser).toHaveBeenCalled());
+
+    await waitFor(() => expect(mockOnLogin).not.toHaveBeenCalled());
+
+    await waitFor(() => expect(mockNavigate).not.toHaveBeenCalled());
+  });
 });
