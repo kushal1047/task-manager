@@ -65,4 +65,22 @@ describe("Task Routes", () => {
     expect(res.statusCode).toBe(404);
     expect(res.body.msg).toBe("Task not found");
   });
+
+  it("deletes a task", async () => {
+    const { token, userId } = await getToken();
+    const task = await Task.create({
+      title: "Test task",
+      completed: false,
+      user: userId,
+    });
+    let taskId = task._id;
+    const res = await request(app)
+      .delete(`/api/tasks/${taskId}`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.statusCode).toBe(204);
+
+    const deleted = await Task.findById(taskId);
+    expect(deleted).toBeNull();
+  });
 });
