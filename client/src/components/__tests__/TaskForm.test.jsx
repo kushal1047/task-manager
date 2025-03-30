@@ -27,4 +27,20 @@ describe("TaskForm component", () => {
     expect(onAddMock).toHaveBeenCalledWith("Buy milk");
     expect(input.value).toBe(""); // input should be cleared
   });
+
+  it("does not call onAdd if input is empty", () => {
+    const onAddMock = jest.fn();
+    render(<TaskForm onAdd={onAddMock} />);
+    fireEvent.click(screen.getByRole("button", { name: /add/i }));
+    expect(onAddMock).not.toHaveBeenCalled();
+  });
+
+  it("does not call onAdd if input is just spaces", () => {
+    const onAddMock = jest.fn();
+    render(<TaskForm onAdd={onAddMock} />);
+    const input = screen.getByPlaceholderText(/add a new task/i);
+    fireEvent.change(input, { target: { value: "   " } });
+    fireEvent.click(screen.getByRole("button", { name: /add/i }));
+    expect(onAddMock).not.toHaveBeenCalled();
+  });
 });
