@@ -1,6 +1,6 @@
 require("./setup");
 const request = require("supertest");
-const app = require("../server");
+const app = require("../index");
 const User = require("../models/User");
 const Task = require("../models/Task");
 const jwt = require("jsonwebtoken");
@@ -63,7 +63,7 @@ describe("Task Routes", () => {
       .send({ completed: true });
 
     expect(res.statusCode).toBe(404);
-    expect(res.body.msg).toBe("Task not found");
+    expect(res.body.error).toBe("Task not found");
   });
 
   it("deletes a task", async () => {

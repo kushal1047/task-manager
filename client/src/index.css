@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Set html and body background to indigo-50 for seamless over-scroll on mobile */
+html,
+body {
+  background-color: #eef2ff;
+}
+
+:root {
+  background-color: #eef2ff;
+}

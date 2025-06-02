@@ -1,89 +1,160 @@
-import { useState } from "react";
-import { loginUser } from "../api";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { validateLogin } from "../utils/validation";
 
-export default function Login({ onLogin }) {
+export default function Login() {
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState([]);
+  const { login, loading, error: authError, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: "", password: "" });
-  const handleChange = (e) =>
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const location = useLocation();
+
+  // Navigate when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated && location.pathname !== "/") {
+      navigate("/", { replace: true });
+    }
+  }, [isAuthenticated, navigate, location.pathname]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    // Clear errors when user starts typing
+    if (errors.length > 0) {
+      setErrors([]);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate input
+    const validation = validateLogin(formData);
+    if (!validation.isValid) {
+      setErrors(validation.errors);
+      return;
+    }
+
     try {
-      const { token, user } = await loginUser(form);
-      localStorage.setItem("token", token);
-      localStorage.setItem("name", user.firstName);
-      onLogin();
-      navigate("/");
+      await login(formData);
+      // Navigation will be handled by useEffect when isAuthenticated changes
     } catch (err) {
-      console.error(err);
-      // add error display logic if desired
+      console.error("Login failed:", err);
+      setErrors([err.message]);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-white px-3">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md py-8 px-4 bg-white shadow-lg rounded-lg"
-      >
-        <h2 className="text-3xl font-semibold text-center text-indigo-600 mb-6">
-          Sign In
-        </h2>
+    <div className="min-h-screen bg-indigo-50 relative">
+      {/* Logo in top left */}
+      <div className="absolute top-4 left-4">
+        <h1 className="italic text-2xl font-bold text-indigo-600">
+          Get it Done.
+        </h1>
+      </div>
 
-        <div className="mb-4">
-          <label
-            htmlFor="username"
-            className="block text-gray-700 font-medium mb-1"
-          >
-            Username
-          </label>
-          <input
-            id="username"
-            name="username"
-            type="text"
-            value={form.username}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:outline-none"
-            required
-            placeholder="Enter your username"
-          />
+      {/* Login form centered */}
+      <div className="flex items-center justify-center min-h-screen px-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-indigo-600 mb-2">
+              Welcome Back
+            </h2>
+            <p className="text-gray-600 font-semibold">Sign in to continue</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Username field */}
+            <div>
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  errors.length > 0 ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="Enter your username"
+                disabled={loading}
+              />
+            </div>
+
+            {/* Password field */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                  errors.length > 0 ? "border-red-500" : "border-gray-300"
+                }`}
+                placeholder="Enter your password"
+                disabled={loading}
+              />
+            </div>
+
+            {/* Error messages */}
+            {(errors.length > 0 || authError) && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <ul className="text-sm text-red-600">
+                  {errors.map((error, index) => (
+                    <li key={index}>{error}</li>
+                  ))}
+                  {authError && <li>{authError}</li>}
+                </ul>
+              </div>
+            )}
+
+            {/* Submit button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-indigo-600 hover:bg-indigo-700 text-white"
+              }`}
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
+
+          {/* Register link */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-600">
+              Don't have an account?{" "}
+              <Link
+                to="/register"
+                className="text-indigo-600 hover:text-indigo-700 font-medium hover:underline"
+              >
+                Register Here
+              </Link>
+            </p>
+          </div>
         </div>
-
-        <div className="mb-6">
-          <label
-            htmlFor="password"
-            className="block text-gray-700 font-medium mb-1"
-          >
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:outline-none"
-            required
-            placeholder="Enter your password"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-all"
-        >
-          Login
-        </button>
-
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Don't have an account?{" "}
-          <a href="/register" className="text-indigo-500 hover:underline">
-            Register
-          </a>
-        </p>
-      </form>
+      </div>
     </div>
   );
 }

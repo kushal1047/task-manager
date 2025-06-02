@@ -1,6 +1,6 @@
 require("./setup");
 const request = require("supertest");
-const app = require("../server");
+const app = require("../index");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -70,8 +70,8 @@ describe("Auth Routes", () => {
       password: "secret12",
     });
 
-    expect(res.statusCode).toBe(400);
-    expect(res.body.msg).toBe("Invalid credentials");
+    expect(res.statusCode).toBe(401);
+    expect(res.body.error).toBe("Invalid credentials");
   });
 
   it("returns valid: true for valid token", async () => {
@@ -101,7 +101,7 @@ describe("Auth Routes", () => {
     const res = await request(app).get("/api/auth/validate-token");
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.msg).toBe("No token, auth denied");
+    expect(res.body.error).toBe("No token, authorization denied");
   });
 
   it("rejects request with invalid token", async () => {
@@ -110,6 +110,6 @@ describe("Auth Routes", () => {
       .set("Authorization", `Bearer invalidtoken123`);
 
     expect(res.statusCode).toBe(401);
-    expect(res.body.msg).toBe("Token invalid");
+    expect(res.body.error).toBe("Token invalid");
   });
 });

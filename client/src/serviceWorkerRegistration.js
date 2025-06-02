@@ -13,13 +13,13 @@ export function register(config) {
     if (publicUrl.origin !== window.location.origin) return;
 
     window.addEventListener("load", () => {
-      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+      const swUrl = `${process.env.PUBLIC_URL}/sw.js`;
 
       if (isLocalhost) {
         // Check for service worker on localhost
         checkValidServiceWorker(swUrl, config);
         navigator.serviceWorker.ready.then(() => {
-          console.log("Service worker is ready.");
+          // Service worker is ready
         });
       } else {
         // Register service worker
@@ -33,9 +33,11 @@ function registerValidSW(swUrl, config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
+      // Check for immediate updates
       if (registration.waiting) {
         config?.onUpdate?.(registration);
       }
+
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (installingWorker == null) return;
@@ -43,16 +45,34 @@ function registerValidSW(swUrl, config) {
         installingWorker.onstatechange = () => {
           if (installingWorker.state === "installed") {
             if (navigator.serviceWorker.controller) {
+              // New content is available and the previous service worker will still serve the old content
               config?.onUpdate?.(registration);
             } else {
+              // Content is cached for offline use
               config?.onSuccess?.(registration);
             }
           }
         };
       };
+
+      // Listen for messages from service worker
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "SKIP_WAITING") {
+          registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+        }
+      });
+
+      // Handle controller change (new service worker takes over)
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        // New service worker activated
+        // Optionally reload the page to ensure fresh content
+        if (config?.onUpdate) {
+          window.location.reload();
+        }
+      });
     })
     .catch((error) => {
-      console.error("Error during service worker registration:", error);
+      // Error during service worker registration
     });
 }
 
@@ -73,7 +93,7 @@ function checkValidServiceWorker(swUrl, config) {
       }
     })
     .catch(() => {
-      console.log("No internet connection. App is running in offline mode.");
+      // No internet connection. App is running in offline mode
     });
 }
 
@@ -84,7 +104,7 @@ export function unregister() {
         registration.unregister();
       })
       .catch((error) => {
-        console.error(error.message);
+        // Error unregistering service worker
       });
   }
 }

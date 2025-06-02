@@ -1,1 +1,20 @@
+# Handle static assets first (before SPA routing)
+/static/*  /static/:splat  200
+/*.js      /:splat         200
+/*.css     /:splat         200
+/*.png     /:splat         200
+/*.jpg     /:splat         200
+/*.jpeg    /:splat         200
+/*.gif     /:splat         200
+/*.svg     /:splat         200
+/*.ico     /:splat         200
+/*.woff    /:splat         200
+/*.woff2   /:splat         200
+/*.ttf     /:splat         200
+/*.eot     /:splat         200
+/*.json    /:splat         200
+/*.webp    /:splat         200
+/*.wav     /:splat         200
+
+# Handle client-side routing (catch-all for HTML routes)
 /*    /index.html   200

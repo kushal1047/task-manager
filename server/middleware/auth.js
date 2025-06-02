@@ -1,16 +1,25 @@
 const jwt = require("jsonwebtoken");
+const { JWT_CONFIG, ERROR_MESSAGES } = require("../config/constants");
+const { createUnauthorizedError } = require("../utils/errorHandler");
 
-function auth(req, res, next) {
+/**
+ * Authentication middleware
+ * Verifies JWT token and adds user info to request
+ */
+const auth = (req, res, next) => {
   const token = req.header("Authorization")?.split(" ")[1];
-  if (!token) return res.status(401).json({ msg: "No token, auth denied" });
+
+  if (!token) {
+    return next(createUnauthorizedError(ERROR_MESSAGES.TOKEN_MISSING));
+  }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_CONFIG.SECRET);
     req.user = decoded;
     next();
   } catch (err) {
-    res.status(401).json({ msg: "Token invalid", error: err.message });
+    next(createUnauthorizedError(ERROR_MESSAGES.TOKEN_INVALID));
   }
-}
+};
 
 module.exports = auth;
