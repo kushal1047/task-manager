@@ -14,8 +14,9 @@ const app = express();
 const corsOptions = {
   origin: [
     "http://localhost:3000", // Development
-    "https://task-dist.netlify.app", // Your Netlify domain
+    "https://task-dist.netlify.app", // Your old Netlify domain
     "https://task-dist-dev.netlify.app", // If you have a dev version
+    "https://kushal-task-manager.netlify.app", // Your current Netlify domain
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -39,6 +40,22 @@ const authMiddleware = require("./middleware/auth");
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/tasks", authMiddleware, require("./routes/tasks"));
 app.use("/api/task-sharing", authMiddleware, require("./routes/taskSharing"));
+
+// Root endpoint
+app.get("/", (req, res) => {
+  res.status(200).json({
+    message: "Task Manager API Server",
+    status: "Running",
+    timestamp: new Date().toISOString(),
+    environment: SERVER_CONFIG.NODE_ENV,
+    endpoints: {
+      health: "/health",
+      auth: "/api/auth",
+      tasks: "/api/tasks",
+      taskSharing: "/api/task-sharing",
+    },
+  });
+});
 
 // Health check endpoint
 app.get("/health", (req, res) => {
