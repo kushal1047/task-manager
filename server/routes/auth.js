@@ -17,13 +17,13 @@ const {
 
 const router = express.Router();
 
-// Register
+// Sign up new user
 router.post(
   "/register",
   asyncHandler(async (req, res) => {
     const { firstName, lastName, username, password } = req.body;
 
-    // Validate input
+    // Check if form data is valid
     const validation = validateRegistration({
       firstName,
       lastName,
@@ -34,17 +34,17 @@ router.post(
       throw createBadRequestError(validation.errors.join(", "));
     }
 
-    // Check if user exists
+    // See if username is already taken
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       throw createBadRequestError(ERROR_MESSAGES.USERNAME_TAKEN);
     }
 
-    // Hash password
+    // Encrypt password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
+    // Save new user to database
     const user = new User({
       firstName,
       lastName,
@@ -65,31 +65,31 @@ router.post(
   })
 );
 
-// Login
+// Sign in existing user
 router.post(
   "/login",
   asyncHandler(async (req, res) => {
     const { username, password } = req.body;
 
-    // Validate input
+    // Check if form data is valid
     const validation = validateLogin({ username, password });
     if (!validation.isValid) {
       throw createBadRequestError(validation.errors.join(", "));
     }
 
-    // Find user
+    // Look up user by username
     const user = await User.findOne({ username });
     if (!user) {
       throw createUnauthorizedError(ERROR_MESSAGES.USER_NOT_FOUND);
     }
 
-    // Verify password
+    // Check if password is correct
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       throw createUnauthorizedError(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
-    // Generate token
+    // Create login token
     const token = jwt.sign({ id: user._id }, JWT_CONFIG.SECRET, {
       expiresIn: JWT_CONFIG.EXPIRES_IN,
     });
@@ -105,7 +105,7 @@ router.post(
   })
 );
 
-// Validate token
+// Check if token is still valid
 router.get("/validate-token", authMiddleware, (req, res) => {
   res.json({ valid: true });
 });

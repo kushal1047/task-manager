@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 
+// Task model with subtasks and sharing support
 const TaskSchema = new mongoose.Schema(
   {
     user: {
@@ -16,7 +17,7 @@ const TaskSchema = new mongoose.Schema(
       },
     ],
     dueDate: { type: Date },
-    // Task sharing fields
+    // Fields for sharing tasks with other users
     isShared: { type: Boolean, default: false },
     originalCreator: {
       type: mongoose.Schema.Types.ObjectId,

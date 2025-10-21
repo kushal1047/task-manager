@@ -13,7 +13,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Navigate when authentication state changes
+  // Redirect to home when user logs in
   useEffect(() => {
     if (isAuthenticated && location.pathname !== "/") {
       navigate("/", { replace: true });
@@ -26,7 +26,7 @@ export default function Login() {
       ...prev,
       [name]: value,
     }));
-    // Clear errors when user starts typing
+    // Clear error messages when user starts typing
     if (errors.length > 0) {
       setErrors([]);
     }
@@ -35,7 +35,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate input
+    // Check if form data is valid
     const validation = validateLogin(formData);
     if (!validation.isValid) {
       setErrors(validation.errors);
@@ -44,7 +44,7 @@ export default function Login() {
 
     try {
       await login(formData);
-      // Navigation will be handled by useEffect when isAuthenticated changes
+      // Redirect will happen automatically when auth state updates
     } catch (err) {
       console.error("Login failed:", err);
       setErrors([err.message]);

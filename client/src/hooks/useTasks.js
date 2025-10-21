@@ -15,8 +15,8 @@ import { ERROR_MESSAGES } from "../config/constants";
 import storage from "../utils/storage";
 
 /**
- * Custom hook for task management
- * Provides centralized task state and operations
+ * Hook for managing tasks and shared tasks
+ * Handles all task operations and state updates
  */
 export const useTasks = () => {
   const [tasks, setTasks] = useState([]);
@@ -26,9 +26,9 @@ export const useTasks = () => {
   const [updatingTasks, setUpdatingTasks] = useState(new Set());
   const mountedRef = useRef(true);
 
-  // Load tasks from API
+  // Fetch tasks from server
   const loadTasks = useCallback(async () => {
-    // Check if user is authenticated before making API calls
+    // Make sure user is logged in before fetching
     const token = storage.getToken();
     if (!token) {
       if (mountedRef.current) {
@@ -64,7 +64,7 @@ export const useTasks = () => {
     }
   }, []);
 
-  // Refresh all tasks when a share request is accepted
+  // Reload tasks when sharing changes
   const refreshSharedTasks = useCallback(async () => {
     try {
       const [tasksResponse, sharedTasksResponse] = await Promise.all([
@@ -81,40 +81,40 @@ export const useTasks = () => {
     }
   }, []);
 
-  // Create new task without optimistic update to preserve animations
+  // Add new task (no optimistic update to keep animations smooth)
   const handleAddTask = useCallback(async (title, dueDate) => {
     try {
       const response = await createTask(title, dueDate);
-      // Add the task only after server response
+      // Add task to list after server confirms
       setTasks((prev) => [response.data, ...prev]);
     } catch (err) {
       throw err;
     }
   }, []);
 
-  // Toggle task completion with optimistic update
+  // Toggle task completion (with optimistic update)
   const handleToggleTask = useCallback(
     async (id, completed) => {
-      // Prevent multiple rapid clicks
+      // Don't allow multiple clicks at once
       if (updatingTasks.has(id)) return;
 
       setUpdatingTasks((prev) => new Set(prev).add(id));
 
-      // Find the task to check if it has subtasks
+      // Check if task has subtasks
       const task =
         tasks.find((t) => t._id === id) ||
         sharedTasks.find((t) => t._id === id);
       const hasSubtasks =
         task && Array.isArray(task.subtasks) && task.subtasks.length > 0;
 
-      // Optimistic update for both regular and shared tasks
+      // Update UI immediately for both regular and shared tasks
       setTasks((prev) =>
         prev.map((t) =>
           t._id === id
             ? {
                 ...t,
                 completed,
-                // Update all subtasks to match parent task completion
+                // Mark all subtasks as completed too
                 ...(hasSubtasks && {
                   subtasks: t.subtasks.map((st) => ({ ...st, completed })),
                 }),
@@ -123,14 +123,14 @@ export const useTasks = () => {
         )
       );
 
-      // Also update shared tasks if this is a shared task
+      // Update shared tasks too if this is a shared task
       setSharedTasks((prev) =>
         prev.map((t) =>
           t._id === id
             ? {
                 ...t,
                 completed,
-                // Update all subtasks to match parent task completion
+                // Mark all subtasks as completed too
                 ...(hasSubtasks && {
                   subtasks: t.subtasks.map((st) => ({ ...st, completed })),
                 }),
@@ -141,13 +141,13 @@ export const useTasks = () => {
 
       try {
         const response = await updateTask(id, completed);
-        // Update with server response (which includes updated subtasks)
+        // Update with server response
         setTasks((prev) => prev.map((t) => (t._id === id ? response.data : t)));
         setSharedTasks((prev) =>
           prev.map((t) => (t._id === id ? response.data : t))
         );
       } catch (err) {
-        // Revert on error - only revert parent task, not subtasks
+        // Revert changes if server call failed
         setTasks((prev) =>
           prev.map((t) => (t._id === id ? { ...t, completed: !completed } : t))
         );
@@ -166,24 +166,24 @@ export const useTasks = () => {
     [tasks, sharedTasks, updatingTasks]
   );
 
-  // Delete task with optimistic update
+  // Delete task (with optimistic update)
   const handleDeleteTask = useCallback(
     async (id) => {
-      // Prevent multiple rapid clicks
+      // Don't allow multiple clicks at once
       if (updatingTasks.has(id)) return;
 
       setUpdatingTasks((prev) => new Set(prev).add(id));
 
-      // Store task for potential rollback
+      // Keep task data in case we need to restore it
       const taskToDelete = tasks.find((t) => t._id === id);
 
-      // Optimistic update
+      // Remove from UI immediately
       setTasks((prev) => prev.filter((t) => t._id !== id));
 
       try {
         await deleteTask(id);
       } catch (err) {
-        // Restore task on error
+        // Put task back if unlinking failed
         setTasks((prev) => [...prev, taskToDelete]);
         throw err;
       } finally {
@@ -197,7 +197,7 @@ export const useTasks = () => {
     [tasks, updatingTasks]
   );
 
-  // Add subtask without optimistic update to preserve animations
+  // Add subtask (no optimistic update to keep animations smooth)
   const handleAddSubtask = useCallback(
     async (taskId, title) => {
       const task =
@@ -209,7 +209,7 @@ export const useTasks = () => {
         const response = await addSubtask(taskId, title);
         const updatedTask = response.data;
 
-        // Just update the task with server response (backend handles parent task completion)
+        // Update task with server response
         setTasks((prev) =>
           prev.map((t) => (t._id === taskId ? updatedTask : t))
         );
@@ -223,7 +223,7 @@ export const useTasks = () => {
     [tasks, sharedTasks]
   );
 
-  // Toggle subtask completion with optimistic update
+  // Toggle subtask completion (with optimistic update)
   const handleToggleSubtask = useCallback(
     async (taskId, subtaskIndex, completed) => {
       const task =
@@ -231,7 +231,7 @@ export const useTasks = () => {
         sharedTasks.find((t) => t._id === taskId);
       if (!task || !task.subtasks) return;
 
-      // Optimistic update for subtask in both regular and shared tasks
+      // Update subtask immediately in both regular and shared tasks
       setTasks((prev) =>
         prev.map((t) =>
           t._id === taskId
@@ -262,7 +262,7 @@ export const useTasks = () => {
         const response = await toggleSubtask(taskId, subtaskIndex, completed);
         const updatedTask = response.data;
 
-        // Just update the task with server response (backend now handles parent task completion)
+        // Update task with server response
         setTasks((prev) =>
           prev.map((t) => (t._id === taskId ? updatedTask : t))
         );
@@ -270,7 +270,7 @@ export const useTasks = () => {
           prev.map((t) => (t._id === taskId ? updatedTask : t))
         );
       } catch (err) {
-        // Revert on error
+        // Revert changes if server call failed
         setTasks((prev) =>
           prev.map((t) =>
             t._id === taskId
@@ -301,7 +301,7 @@ export const useTasks = () => {
     [tasks, sharedTasks]
   );
 
-  // Delete subtask with optimistic update
+  // Delete subtask (with optimistic update)
   const handleDeleteSubtask = useCallback(
     async (taskId, subtaskIndex) => {
       const task =
@@ -311,7 +311,7 @@ export const useTasks = () => {
 
       const subtaskToDelete = task.subtasks[subtaskIndex];
 
-      // Optimistic update for both regular and shared tasks
+      // Update UI immediately for both regular and shared tasks
       setTasks((prev) =>
         prev.map((t) =>
           t._id === taskId
@@ -378,7 +378,7 @@ export const useTasks = () => {
     [tasks, sharedTasks]
   );
 
-  // Set due date with optimistic update
+  // Set due date (with optimistic update)
   const handleSetDueDate = useCallback(
     async (taskId, dueDate) => {
       const task =
@@ -388,7 +388,7 @@ export const useTasks = () => {
 
       const oldDueDate = task.dueDate;
 
-      // Optimistic update for both regular and shared tasks
+      // Update UI immediately for both regular and shared tasks
       setTasks((prev) =>
         prev.map((t) => (t._id === taskId ? { ...t, dueDate } : t))
       );
@@ -406,7 +406,7 @@ export const useTasks = () => {
           prev.map((t) => (t._id === taskId ? response.data : t))
         );
       } catch (err) {
-        // Revert on error
+        // Revert changes if server call failed
         setTasks((prev) =>
           prev.map((t) =>
             t._id === taskId ? { ...t, dueDate: oldDueDate } : t
@@ -423,21 +423,21 @@ export const useTasks = () => {
     [tasks, sharedTasks]
   );
 
-  // Handle unlinking shared task
+  // Unlink shared task
   const handleUnlinkSharedTask = useCallback(
     async (taskId) => {
-      // Prevent multiple rapid clicks
+      // Don't allow multiple clicks at once
       if (updatingTasks.has(taskId)) return;
 
       setUpdatingTasks((prev) => new Set(prev).add(taskId));
 
-      // Optimistic update
+      // Remove from UI immediately
       setSharedTasks((prev) => prev.filter((t) => t._id !== taskId));
 
       try {
         await unlinkSharedTask(taskId);
       } catch (err) {
-        // Restore task on error
+        // Put task back if unlinking failed
         const taskToRestore = sharedTasks.find((t) => t._id === taskId);
         if (taskToRestore) {
           setSharedTasks((prev) => [...prev, taskToRestore]);
@@ -454,9 +454,9 @@ export const useTasks = () => {
     [sharedTasks, updatingTasks]
   );
 
-  // Load tasks on mount - but only if authenticated
+  // Load tasks when component mounts (only if user is logged in)
   useEffect(() => {
-    // Reset mounted ref on mount
+    // Reset tracking variable when component mounts
     mountedRef.current = true;
 
     const token = storage.getToken();
@@ -464,13 +464,13 @@ export const useTasks = () => {
       loadTasks();
     }
 
-    // Cleanup function
+    // Clean up when component unmounts
     return () => {
       mountedRef.current = false;
     };
   }, [loadTasks]);
 
-  // Poll for both regular and shared task updates every 5 seconds
+  // Check for task updates every 5 seconds
   useEffect(() => {
     const token = storage.getToken();
     if (!token) return;
@@ -478,14 +478,14 @@ export const useTasks = () => {
     const interval = setInterval(async () => {
       if (mountedRef.current) {
         try {
-          // Poll both regular tasks AND shared tasks for bidirectional sync
+          // Fetch both regular and shared tasks to keep them in sync
           const [tasksResponse, sharedTasksResponse] = await Promise.all([
             fetchTasks(),
             getSharedTasks(),
           ]);
 
           if (mountedRef.current) {
-            // Force state update by comparing content to ensure React detects changes
+            // Only update state if data actually changed
             setTasks((prev) => {
               const newTasks = tasksResponse.data;
               return JSON.stringify(prev) !== JSON.stringify(newTasks)
@@ -504,7 +504,7 @@ export const useTasks = () => {
           console.error("Failed to poll for task updates:", err);
         }
       }
-    }, 5000); // Poll every 5 seconds
+    }, 5000); // Check every 5 seconds
 
     return () => clearInterval(interval);
   }, []);

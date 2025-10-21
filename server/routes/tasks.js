@@ -14,7 +14,7 @@ const {
 } = require("../utils/errorHandler");
 const { STATUS_CODES, ERROR_MESSAGES } = require("../config/constants");
 
-// Cache middleware
+// Cache tasks to speed up repeated requests
 const cacheMiddleware = (req, res, next) => {
   const cacheKey = `tasks_${req.user.id}`;
   const cached = cache.get(cacheKey);
@@ -32,20 +32,20 @@ const cacheMiddleware = (req, res, next) => {
   next();
 };
 
-// Clear cache for user
+// Remove cached tasks for a user
 const clearUserCache = (userId) => {
   const cacheKey = `tasks_${userId}`;
   cache.delete(cacheKey);
 };
 
-// GET all tasks for the logged-in user (only original tasks, not shared ones)
+// Get all tasks for the current user (not shared tasks)
 router.get(
   "/",
   cacheMiddleware,
   asyncHandler(async (req, res) => {
     const tasks = await Task.find({
       user: req.user.id,
-      isShared: { $ne: true }, // Exclude shared tasks from this endpoint
+      isShared: { $ne: true }, // Don't include shared tasks here
     })
       .sort({ createdAt: -1 })
       .lean()
@@ -55,13 +55,13 @@ router.get(
   })
 );
 
-// POST a new task for this user
+// Create a new task
 router.post(
   "/",
   asyncHandler(async (req, res) => {
     const { title, dueDate } = req.body;
 
-    // Validate input
+    // Check if task data is valid
     const validation = validateTaskCreation({ title, dueDate });
     if (!validation.isValid) {
       throw createBadRequestError(validation.errors.join(", "));
@@ -78,13 +78,13 @@ router.post(
   })
 );
 
-// PUT toggle completion—but only if the task belongs to this user
+// Toggle task completion (only for user's own tasks)
 router.put(
   "/:id",
   asyncHandler(async (req, res) => {
     const { completed } = req.body;
 
-    // Get the current task to check if it has subtasks
+    // Find the task and check if it has subtasks
     const currentTask = await Task.findOne({
       _id: req.params.id,
       user: req.user.id,
@@ -94,20 +94,20 @@ router.put(
       throw createNotFoundError();
     }
 
-    // Update the task completion
+    // Mark task as completed or not
     currentTask.completed = completed;
 
-    // If task has subtasks, update all subtasks to match parent task completion
+    // If task has subtasks, mark them all the same way
     if (currentTask.subtasks && currentTask.subtasks.length > 0) {
       currentTask.subtasks.forEach((subtask) => {
         subtask.completed = completed;
       });
     }
 
-    // Save the updated task
+    // Save changes to database
     const updated = await currentTask.save();
 
-    // Sync changes to shared task instances if this is a shared task
+    // Update shared task copies if this is a shared task
     if (currentTask.isShared && currentTask.sharedTaskId) {
       // Update the original task
       await Task.findByIdAndUpdate(currentTask.sharedTaskId, {
@@ -115,13 +115,13 @@ router.put(
         subtasks: currentTask.subtasks,
       }).exec();
 
-      // Clear cache for the original task creator
+      // Clear cache for the original task owner
       const originalTask = await Task.findById(currentTask.sharedTaskId).exec();
       if (originalTask) {
         clearUserCache(originalTask.user.toString());
       }
 
-      // Update all other shared instances
+      // Update all other copies of this shared task
       const otherInstances = await Task.find({
         sharedTaskId: currentTask.sharedTaskId,
         _id: { $ne: currentTask._id },
@@ -134,7 +134,7 @@ router.put(
         clearUserCache(instance.user.toString());
       }
     } else if (currentTask.sharedWith && currentTask.sharedWith.length > 0) {
-      // This is an original task that's shared, update all shared instances
+      // This is an original task that's shared, update all copies
       const sharedInstances = await Task.find({
         sharedTaskId: currentTask._id,
       }).exec();
@@ -152,7 +152,7 @@ router.put(
   })
 );
 
-// DELETE a task—only if it belongs to the user
+// Delete a task (only if it belongs to the user)
 router.delete(
   "/:id",
   asyncHandler(async (req, res) => {
@@ -165,14 +165,14 @@ router.delete(
       throw createNotFoundError();
     }
 
-    // If this was a shared task, also delete all shared instances
+    // If this was a shared task, delete all copies too
     if (deleted.sharedWith && deleted.sharedWith.length > 0) {
-      // Delete all shared instances of this task
+      // Delete all copies of this shared task
       await Task.deleteMany({
         sharedTaskId: deleted._id,
       }).exec();
 
-      // Clear cache for all affected users
+      // Clear cache for everyone who had this task
       for (const share of deleted.sharedWith) {
         clearUserCache(share.user.toString());
       }
@@ -183,13 +183,13 @@ router.delete(
   })
 );
 
-// Add a subtask to a task
+// Add a subtask
 router.post(
   "/:id/subtasks",
   asyncHandler(async (req, res) => {
     const { title } = req.body;
 
-    // Validate input
+    // Check if task data is valid
     const validation = validateSubtaskCreation({ title });
     if (!validation.isValid) {
       throw createBadRequestError(validation.errors.join(", "));
@@ -205,20 +205,20 @@ router.post(
       throw createNotFoundError();
     }
 
-    // Sync subtask addition to shared task instances
+    // Add subtask to all copies of shared tasks
     if (task.isShared && task.sharedTaskId) {
       // Update the original task
       await Task.findByIdAndUpdate(task.sharedTaskId, {
         $push: { subtasks: { title: title.trim(), completed: false } },
       }).exec();
 
-      // Clear cache for the original task creator
+      // Clear cache for the original task owner
       const originalTask = await Task.findById(task.sharedTaskId).exec();
       if (originalTask) {
         clearUserCache(originalTask.user.toString());
       }
 
-      // Update all other shared instances
+      // Update all other copies of this shared task
       const otherInstances = await Task.find({
         sharedTaskId: task.sharedTaskId,
         _id: { $ne: task._id },
@@ -230,7 +230,7 @@ router.post(
         clearUserCache(instance.user.toString());
       }
     } else if (task.sharedWith && task.sharedWith.length > 0) {
-      // This is an original task that's shared, update all shared instances
+      // This is an original task that's shared, update all copies
       const sharedInstances = await Task.find({
         sharedTaskId: task._id,
       }).exec();
@@ -247,7 +247,7 @@ router.post(
   })
 );
 
-// Remove a subtask by index
+// Delete a subtask
 router.delete(
   "/:id/subtasks/:subtaskIndex",
   asyncHandler(async (req, res) => {
@@ -261,7 +261,7 @@ router.delete(
       throw createNotFoundError();
     }
 
-    // Validate subtask index
+    // Check if subtask index is valid
     const validation = validateSubtaskIndex(
       parseInt(subtaskIndex),
       task.subtasks?.length || 0
@@ -273,18 +273,18 @@ router.delete(
     task.subtasks.splice(parseInt(subtaskIndex), 1);
     await task.save();
 
-    // Sync subtask deletion to shared task instances
+    // Remove subtask from all copies of shared tasks
     if (task.isShared && task.sharedTaskId) {
       // Update the original task
       const originalTask = await Task.findById(task.sharedTaskId).exec();
       if (originalTask && originalTask.subtasks[parseInt(subtaskIndex)]) {
         originalTask.subtasks.splice(parseInt(subtaskIndex), 1);
         await originalTask.save();
-        // Clear cache for the original task creator
+        // Clear cache for the original task owner
         clearUserCache(originalTask.user.toString());
       }
 
-      // Update all other shared instances
+      // Update all other copies of this shared task
       const otherInstances = await Task.find({
         sharedTaskId: task.sharedTaskId,
         _id: { $ne: task._id },
@@ -298,7 +298,7 @@ router.delete(
         }
       }
     } else if (task.sharedWith && task.sharedWith.length > 0) {
-      // This is an original task that's shared, update all shared instances
+      // This is an original task that's shared, update all copies
       const sharedInstances = await Task.find({
         sharedTaskId: task._id,
       }).exec();
@@ -332,7 +332,7 @@ router.patch(
       throw createNotFoundError();
     }
 
-    // Validate subtask index
+    // Check if subtask index is valid
     const validation = validateSubtaskIndex(
       parseInt(subtaskIndex),
       task.subtasks?.length || 0
@@ -343,7 +343,7 @@ router.patch(
 
     task.subtasks[parseInt(subtaskIndex)].completed = completed;
 
-    // Check if we need to update parent task completion
+    // See if parent task completion should change
     const allSubtasksCompleted = task.subtasks.every((s) => s.completed);
     const shouldUpdateParent = task.completed !== allSubtasksCompleted;
 
@@ -353,14 +353,14 @@ router.patch(
 
     await task.save();
 
-    // Sync subtask toggle to shared task instances
+    // Update subtask in all copies of shared tasks
     if (task.isShared && task.sharedTaskId) {
       // Update the original task
       const originalTask = await Task.findById(task.sharedTaskId).exec();
       if (originalTask && originalTask.subtasks[parseInt(subtaskIndex)]) {
         originalTask.subtasks[parseInt(subtaskIndex)].completed = completed;
 
-        // Update parent task completion for original task
+        // Update parent task completion
         const originalAllSubtasksCompleted = originalTask.subtasks.every(
           (s) => s.completed
         );
@@ -372,11 +372,11 @@ router.patch(
         }
 
         await originalTask.save();
-        // Clear cache for the original task creator
+        // Clear cache for the original task owner
         clearUserCache(originalTask.user.toString());
       }
 
-      // Update all other shared instances
+      // Update all other copies of this shared task
       const otherInstances = await Task.find({
         sharedTaskId: task.sharedTaskId,
         _id: { $ne: task._id },
@@ -386,7 +386,7 @@ router.patch(
         if (instance.subtasks[parseInt(subtaskIndex)]) {
           instance.subtasks[parseInt(subtaskIndex)].completed = completed;
 
-          // Update parent task completion for other instances
+          // Update parent task completion
           const instanceAllSubtasksCompleted = instance.subtasks.every(
             (s) => s.completed
           );
@@ -402,7 +402,7 @@ router.patch(
         }
       }
     } else if (task.sharedWith && task.sharedWith.length > 0) {
-      // This is an original task that's shared, update all shared instances
+      // This is an original task that's shared, update all copies
       const sharedInstances = await Task.find({
         sharedTaskId: task._id,
       }).exec();
@@ -411,7 +411,7 @@ router.patch(
         if (instance.subtasks[parseInt(subtaskIndex)]) {
           instance.subtasks[parseInt(subtaskIndex)].completed = completed;
 
-          // Update parent task completion for shared instances
+          // Update parent task completion
           const instanceAllSubtasksCompleted = instance.subtasks.every(
             (s) => s.completed
           );
@@ -433,7 +433,7 @@ router.patch(
   })
 );
 
-// Update task completion only (without affecting subtasks)
+// Update task completion (don't change subtasks)
 router.patch(
   "/:id/completion",
   asyncHandler(async (req, res) => {
@@ -453,7 +453,7 @@ router.patch(
   })
 );
 
-// Set or update due date for a task
+// Set due date for a task
 router.patch(
   "/:id/due-date",
   asyncHandler(async (req, res) => {
@@ -468,18 +468,18 @@ router.patch(
       throw createNotFoundError();
     }
 
-    // Sync due date changes to shared task instances
+    // Update due date in all copies of shared tasks
     if (task.isShared && task.sharedTaskId) {
       // Update the original task
       await Task.findByIdAndUpdate(task.sharedTaskId, { dueDate }).exec();
 
-      // Clear cache for the original task creator
+      // Clear cache for the original task owner
       const originalTask = await Task.findById(task.sharedTaskId).exec();
       if (originalTask) {
         clearUserCache(originalTask.user.toString());
       }
 
-      // Update all other shared instances
+      // Update all other copies of this shared task
       const otherInstances = await Task.find({
         sharedTaskId: task.sharedTaskId,
         _id: { $ne: task._id },
@@ -491,7 +491,7 @@ router.patch(
         clearUserCache(instance.user.toString());
       }
     } else if (task.sharedWith && task.sharedWith.length > 0) {
-      // This is an original task that's shared, update all shared instances
+      // This is an original task that's shared, update all copies
       const sharedInstances = await Task.find({
         sharedTaskId: task._id,
       }).exec();

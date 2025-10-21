@@ -1,6 +1,6 @@
-// Cache utility functions for handling deployment scenarios
+// Helper functions for managing browser cache
 
-// Import deployment info if available
+// Get build info if available
 let DEPLOYMENT_ID = null;
 let BUILD_TIME = null;
 
@@ -9,7 +9,7 @@ try {
   DEPLOYMENT_ID = deploymentInfo.DEPLOYMENT_ID;
   BUILD_TIME = deploymentInfo.BUILD_TIME;
 } catch (error) {
-  // Fallback if deployment info is not available
+  // Use fallback values if build info isn't available
   DEPLOYMENT_ID = process.env.REACT_APP_BUILD_TIME || Date.now().toString();
   BUILD_TIME = new Date().toISOString();
 }
@@ -22,14 +22,14 @@ export const clearStaleCache = async () => {
         (name) => name.includes("task-app") || name.includes("task-dist")
       );
 
-      // Clear all caches except the current app cache
+      // Clear old caches but keep the current one
       await Promise.all(
         cacheNames
           .filter((name) => name !== currentAppCache)
           .map((name) => caches.delete(name))
       );
 
-      // Stale cache cleared
+      // Old cache cleared
     } catch (error) {
       // Error clearing cache
     }
@@ -42,21 +42,21 @@ export const detectDeploymentChange = () => {
 
   if (lastDeployment && lastDeployment !== currentDeployment) {
     localStorage.setItem("lastDeployment", currentDeployment);
-    return true; // Deployment has changed
+    return true; // Build has changed
   } else if (!lastDeployment) {
     localStorage.setItem("lastDeployment", currentDeployment);
   }
 
-  return false; // No deployment change detected
+  return false; // No build change detected
 };
 
 export const forceReloadIfNeeded = () => {
   const deploymentChanged = detectDeploymentChange();
 
   if (deploymentChanged) {
-    // Clear all caches and reload
+    // Clear cache and reload the page
     clearStaleCache().then(() => {
-      // Small delay to ensure cache is cleared
+      // Wait a bit to make sure cache is cleared
       setTimeout(() => {
         window.location.reload();
       }, 100);
@@ -65,20 +65,20 @@ export const forceReloadIfNeeded = () => {
 };
 
 export const setupCacheHandling = () => {
-  // Clear stale cache on app load
+  // Clear old cache when app starts
   clearStaleCache();
 
-  // Check for deployment changes
+  // Check if build has changed
   const deploymentChanged = detectDeploymentChange();
 
   if (deploymentChanged) {
-    // Deployment change detected, clearing cache
+    // Build changed, cache cleared
   }
 
   return deploymentChanged;
 };
 
-// Export deployment info for debugging
+// Export build info for debugging
 export const getDeploymentInfo = () => ({
   deploymentId: DEPLOYMENT_ID,
   buildTime: BUILD_TIME,

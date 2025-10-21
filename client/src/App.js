@@ -10,13 +10,11 @@ import Register from "./components/Register";
 import Login from "./components/Login";
 import TaskView from "./components/TaskView";
 import { AuthProvider } from "./contexts/AuthContext";
-import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import { useEffect } from "react";
 import { setupCacheHandling } from "./utils/cacheUtils";
-import { setupServiceWorkerHandling } from "./utils/swUtils";
 import ErrorBoundary from "./components/ErrorBoundary";
 
-// Component that only renders when authenticated
+// Main app component for authenticated users
 function AuthenticatedApp({ user }) {
   const {
     tasks,
@@ -54,7 +52,6 @@ function AuthenticatedApp({ user }) {
         onUnlinkSharedTask={handleUnlinkSharedTask}
         onRefreshSharedTasks={refreshSharedTasks}
       />
-      <PWAInstallPrompt />
     </>
   );
 }
@@ -62,21 +59,18 @@ function AuthenticatedApp({ user }) {
 function AppContent() {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
 
-  // Handle cache invalidation and service worker setup on app load
+  // Clear old cache when app loads
   useEffect(() => {
     const deploymentChanged = setupCacheHandling();
-    setupServiceWorkerHandling();
 
-    // Debug deployment issues in development
-    // Removed debugDeployment call to prevent 404 errors in development
-
-    // If deployment changed and user is authenticated, we might need to handle auth state
+    // If we detect a deployment change while user is logged in,
+    // the auth context will handle token validation
     if (deploymentChanged && isAuthenticated) {
-      // The auth context will handle retrying the token validation
+      // Auth context handles retry logic automatically
     }
   }, [isAuthenticated]);
 
-  // Show loading state while checking authentication
+  // Show spinner while we check if user is logged in
   if (authLoading) {
     return (
       <div className="min-h-screen bg-indigo-50 flex items-center justify-center">
@@ -106,7 +100,7 @@ function AppContent() {
             )
           }
         />
-        {/* Fallback route for any unmatched paths */}
+        {/* Catch-all route - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

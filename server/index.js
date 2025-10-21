@@ -10,38 +10,38 @@ const logger = require("./utils/logger");
 
 const app = express();
 
-// CORS configuration
+// Allow requests from these domains
 const corsOptions = {
   origin: [
-    "http://localhost:3000", // Development
-    "https://task-dist.netlify.app", // Your old Netlify domain
-    "https://task-dist-dev.netlify.app", // If you have a dev version
-    "https://kushal-task-manager.netlify.app", // Your current Netlify domain
+    "http://localhost:3000", // Local development
+    "https://task-dist.netlify.app", // Old deployment
+    "https://task-dist-dev.netlify.app", // Dev deployment
+    "https://kushal-task-manager.netlify.app", // Current deployment
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// Middleware
+// Set up middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(requestLogger);
 
-// Connect to database only if not in test mode
+// Connect to database (skip in test mode)
 if (process.env.NODE_ENV !== "test") {
   connectDB();
 }
 
-// Import auth middleware
+// Load auth middleware
 const authMiddleware = require("./middleware/auth");
 
-// Routes
+// Set up API routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/tasks", authMiddleware, require("./routes/tasks"));
 app.use("/api/task-sharing", authMiddleware, require("./routes/taskSharing"));
 
-// Root endpoint
+// API info endpoint
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "Task Manager API Server",
@@ -57,7 +57,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// Health check endpoint
+// Server health check
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -66,12 +66,12 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Global error handler (must be last)
+// Handle all errors (must be last middleware)
 app.use(globalErrorHandler);
 
 const PORT = SERVER_CONFIG.PORT;
 
-// Only start the server if this file is run directly
+// Start server only when run directly (not when imported)
 if (require.main === module) {
   app.listen(PORT, () => {
     logger.info(`Server started`, {

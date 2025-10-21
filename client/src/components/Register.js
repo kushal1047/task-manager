@@ -20,7 +20,7 @@ export default function Register() {
       ...prev,
       [name]: value,
     }));
-    // Clear errors when user starts typing
+    // Clear error messages when user starts typing
     if (errors.length > 0) {
       setErrors([]);
     }
@@ -29,7 +29,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate input
+    // Check if form data is valid
     const validation = validateRegistration(formData);
     if (!validation.isValid) {
       setErrors(validation.errors);

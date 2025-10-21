@@ -7,14 +7,14 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI
+    // Show error UI when something breaks
     return { hasError: true, error };
   }
 
   componentDidCatch(error, errorInfo) {
     console.error("Error caught by boundary:", error, errorInfo);
 
-    // If it's a deployment-related error, try to clear cache and reload
+    // If it's a build issue, try clearing cache and reloading
     if (error.message && error.message.includes("MIME type")) {
       console.log("Detected MIME type error, clearing cache...");
       this.clearCacheAndReload();
@@ -23,20 +23,20 @@ class ErrorBoundary extends React.Component {
 
   clearCacheAndReload = async () => {
     try {
-      // Clear all caches
+      // Clear browser cache
       if ("caches" in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map((name) => caches.delete(name)));
       }
 
-      // Clear localStorage
+      // Clear saved data
       localStorage.clear();
 
-      // Reload the page
+      // Refresh the page
       window.location.reload();
     } catch (error) {
       console.error("Error clearing cache:", error);
-      // Fallback: just reload
+      // If clearing cache fails, just refresh
       window.location.reload();
     }
   };

@@ -34,7 +34,7 @@ export default function TaskForm({ onAdd }) {
           value={title}
           onChange={(e) => {
             setTitle(e.target.value);
-            // Clear due date when input is cleared
+            // Reset due date if user clears the input
             if (!e.target.value.trim()) {
               setDueDate(null);
             }
@@ -43,7 +43,7 @@ export default function TaskForm({ onAdd }) {
           className="w-full pl-4 pr-10 py-2.5 border rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-300"
           disabled={isSubmitting}
         />
-        {/* Calendar icon button, only show when typing */}
+        {/* Calendar button - only show when user is typing */}
         {title.trim() && !isSubmitting && (
           <button
             type="button"
@@ -59,9 +59,9 @@ export default function TaskForm({ onAdd }) {
               viewBox="0 0 24 24"
               strokeWidth={2}
             >
-              {/* Calendar base */}
+              {/* Calendar icon */}
               <rect x="3" y="4" width="18" height="18" rx="2" />
-              {/* Calendar top with dots */}
+              {/* Calendar header */}
               <rect
                 x="3"
                 y="4"
@@ -75,7 +75,7 @@ export default function TaskForm({ onAdd }) {
               <circle cx="7" cy="7" r="1" fill="currentColor" />
               <circle cx="11" cy="7" r="1" fill="currentColor" />
               <circle cx="15" cy="7" r="1" fill="currentColor" />
-              {/* Calendar lines for days */}
+              {/* Calendar grid lines */}
               <line
                 x1="3"
                 y1="10"
@@ -135,17 +135,17 @@ export default function TaskForm({ onAdd }) {
             </svg>
           </button>
         )}
-        {/* Due date popup */}
+        {/* Due date picker popup */}
         <DueDatePopup
           open={showDuePopup}
           initialDate={dueDate}
           onSet={(date) => {
-            setDueDate(date ? new Date(date.getTime()) : null); // handle null case
+            setDueDate(date ? new Date(date.getTime()) : null); // handle null dates
             setShowDuePopup(false);
           }}
           onClose={() => setShowDuePopup(false)}
         />
-        {/* Show selected due date as a badge */}
+        {/* Show due date as a small badge */}
         {dueDate && (
           <span className="absolute right-10 top-1/2 -translate-y-1/2 bg-indigo-100 text-indigo-600 text-xs rounded px-2 py-0.5">
             {getTimeRemainingString(dueDate)}

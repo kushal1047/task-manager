@@ -31,15 +31,15 @@ export const AuthProvider = ({ children }) => {
   const retryCountRef = useRef(0);
   const maxRetries = 3;
 
-  // Check if user is authenticated on mount
+  // Check if user is logged in when component mounts
   useEffect(() => {
-    // Reset refs on mount
+    // Reset tracking variables when component mounts
     authCheckRef.current = false;
     mountedRef.current = true;
     retryCountRef.current = 0;
 
     const checkAuth = async () => {
-      // Prevent multiple simultaneous auth checks
+      // Don't run multiple auth checks at the same time
       if (authCheckRef.current) {
         return;
       }
@@ -65,17 +65,17 @@ export const AuthProvider = ({ children }) => {
           if (valid) {
             const userId = storage.getUserId();
             const userName = storage.getUserName();
-            // Ensure we have both id and name before setting user
+            // Make sure we have complete user data before setting state
             if (userId && userName) {
               setUser({ id: userId, name: userName });
             } else {
-              // If user data is incomplete, clear auth and force re-login
+              // Missing user data - clear everything and force login
               storage.clearAuth();
               setUser(null);
               setIsAuthenticated(false);
             }
           } else {
-            // If token is invalid, clear auth data
+            // Token is bad - clear everything
             storage.clearAuth();
             setUser(null);
           }
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }) => {
       } catch (err) {
         console.error("Token validation failed:", err);
 
-        // Retry logic for network/server issues during deployment
+        // Retry a few times if it's just a network/server hiccup
         if (
           retryCountRef.current < maxRetries &&
           (err.message === ERROR_MESSAGES.NETWORK_ERROR ||
@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }) => {
         ) {
           retryCountRef.current++;
 
-          // Wait before retry (exponential backoff)
+          // Wait a bit before trying again (longer each time)
           await new Promise((resolve) =>
             setTimeout(resolve, 1000 * retryCountRef.current)
           );
@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }) => {
         if (mountedRef.current) {
           setIsAuthenticated(false);
           setUser(null);
-          // Only clear auth if it's an authentication error or max retries exceeded
+          // Clear auth data if it's a real auth error or we've tried too many times
           if (
             err.message === ERROR_MESSAGES.AUTH_ERROR ||
             retryCountRef.current >= maxRetries
@@ -125,14 +125,14 @@ export const AuthProvider = ({ children }) => {
 
     checkAuth();
 
-    // Cleanup function
+    // Clean up when component unmounts
     return () => {
       mountedRef.current = false;
       authCheckRef.current = false;
     };
   }, []);
 
-  // Register new user
+  // Sign up a new user
   const register = useCallback(async (credentials) => {
     if (!mountedRef.current) return;
 
@@ -140,7 +140,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
 
     try {
-      // Validate input
+      // Check if the form data looks good
       const validation = validateRegistration(credentials);
       if (!validation.isValid) {
         throw new Error(validation.errors.join(", "));
@@ -148,12 +148,12 @@ export const AuthProvider = ({ children }) => {
 
       const response = await registerUser(credentials);
 
-      // Store user data
+      // Save user info to localStorage
       storage.setUser(response.user);
 
       if (mountedRef.current) {
         setIsAuthenticated(true);
-        // Ensure we set the user data immediately with the correct structure
+        // Set user data in the right format
         setUser({
           id: response.user.id,
           name: response.user.firstName || response.user.name,
@@ -173,7 +173,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Login user
+  // Sign in existing user
   const login = useCallback(async (credentials) => {
     if (!mountedRef.current) return;
 
@@ -181,7 +181,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
 
     try {
-      // Validate input
+      // Check if the form data looks good
       const validation = validateLogin(credentials);
       if (!validation.isValid) {
         throw new Error(validation.errors.join(", "));
@@ -189,14 +189,14 @@ export const AuthProvider = ({ children }) => {
 
       const response = await loginUser(credentials);
 
-      // Store auth data
+      // Save login info to localStorage
       storage.setToken(response.token);
       storage.setUser(response.user);
 
-      // Update authentication state only if component is still mounted
+      // Update state only if component is still mounted
       if (mountedRef.current) {
         setIsAuthenticated(true);
-        // Ensure we set the user data immediately with the correct structure
+        // Set user data in the right format
         setUser({
           id: response.user.id,
           name: response.user.firstName || response.user.name,
@@ -217,12 +217,12 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Logout user
+  // Sign out user
   const logout = useCallback(() => {
-    // Clear storage first
+    // Clear localStorage first
     storage.clearAuth();
 
-    // Clear browser cache to prevent any cached authentication data
+    // Clear browser cache to remove any cached auth data
     if ("caches" in window) {
       caches.keys().then((cacheNames) => {
         cacheNames.forEach((cacheName) => {
@@ -231,14 +231,7 @@ export const AuthProvider = ({ children }) => {
       });
     }
 
-    // Notify service worker to clear cache
-    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: "CLEAR_CACHE",
-      });
-    }
-
-    // Reset refs
+    // Reset tracking variables
     authCheckRef.current = false;
 
     // Update state only if component is still mounted
@@ -250,7 +243,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Clear error
+  // Clear any error messages
   const clearError = useCallback(() => {
     setError(null);
   }, []);

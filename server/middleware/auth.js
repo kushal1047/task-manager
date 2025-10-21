@@ -3,7 +3,7 @@ const { JWT_CONFIG, ERROR_MESSAGES } = require("../config/constants");
 const { createUnauthorizedError } = require("../utils/errorHandler");
 
 /**
- * Authentication middleware
+ * Check if user is logged in
  * Verifies JWT token and adds user info to request
  */
 const auth = (req, res, next) => {

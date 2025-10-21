@@ -2,13 +2,13 @@ import axios from "axios";
 import { API_CONFIG, ERROR_MESSAGES } from "./config/constants";
 import storage from "./utils/storage";
 
-// Create axios instance with configuration
+// Set up axios with base configuration
 export const api = axios.create({
   baseURL: API_CONFIG.BASE_URL,
   timeout: API_CONFIG.TIMEOUT,
 });
 
-// Request interceptor to add authentication token
+// Add auth token to all requests
 api.interceptors.request.use((config) => {
   const token = storage.getToken();
   if (token) {
@@ -17,31 +17,31 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor for better error handling
+// Handle errors from server responses
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle network errors
+    // Request timed out
     if (error.code === "ECONNABORTED") {
       console.error("Request timeout");
       return Promise.reject(new Error(ERROR_MESSAGES.TIMEOUT_ERROR));
     }
 
-    // Handle network connectivity issues
+    // No response from server
     if (!error.response) {
       console.error("Network error:", error);
       return Promise.reject(new Error(ERROR_MESSAGES.NETWORK_ERROR));
     }
 
-    // Handle authentication errors - don't auto-redirect, let components handle it
+    // User is not logged in or token expired
     if (error.response.status === 401) {
       console.log("Authentication error - clearing auth data");
       storage.clearAuth();
-      // Don't auto-redirect, let the component handle the navigation
+      // Let components handle redirecting to login
       return Promise.reject(new Error(ERROR_MESSAGES.AUTH_ERROR));
     }
 
-    // Handle validation errors
+    // Bad request - form data is invalid
     if (error.response.status === 400) {
       const errorMessage =
         error.response.data?.error || ERROR_MESSAGES.VALIDATION_ERROR;

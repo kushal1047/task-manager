@@ -13,7 +13,7 @@ export default function TaskList({
   showEmpty,
   updatingTasks,
 }) {
-  // Animation variants for task items
+  // Animation settings for task list items
   const taskVariants = {
     initial: {
       opacity: 0,

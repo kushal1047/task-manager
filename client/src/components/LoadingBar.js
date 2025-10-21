@@ -1,5 +1,6 @@
 import React from "react";
 
+// Progress bar component for showing completion percentage
 export default function LoadingBar({ percent = 0 }) {
   return (
     <div className="w-full flex justify-center items-center">

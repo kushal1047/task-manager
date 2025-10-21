@@ -24,10 +24,10 @@ const TaskItem = memo(
     const [showDuePopup, setShowDuePopup] = useState(false);
     const [showSharePopup, setShowSharePopup] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
-    // Due date selection state
+    // Track if task has subtasks
     const hasSubtasks =
       Array.isArray(task.subtasks) && task.subtasks.length > 0;
-    // Real-time update for progress bar (every minute)
+    // Update time every minute for due date progress bar
     useEffect(() => {
       if (!task.dueDate) return;
 
@@ -38,14 +38,14 @@ const TaskItem = memo(
       return () => clearInterval(interval);
     }, [task.dueDate]);
 
-    // Remove due date when task is completed (regardless of how it was completed)
+    // Clear due date when task is marked complete
     useEffect(() => {
       if (task.completed && task.dueDate && onSetDueDate) {
         onSetDueDate(task._id, null);
       }
     }, [task.completed, task.dueDate, task._id, onSetDueDate]);
 
-    // Progress bar logic
+    // Calculate subtask completion percentage
     let subtaskProgress = 0;
     if (hasSubtasks) {
       const total = task.subtasks.length;
@@ -59,7 +59,7 @@ const TaskItem = memo(
           isUpdating ? "opacity-75 scale-95" : ""
         }`}
       >
-        {/* Due date popup */}
+        {/* Due date picker popup */}
         <DueDatePopup
           open={showDuePopup}
           initialDate={task.dueDate}
@@ -70,18 +70,18 @@ const TaskItem = memo(
           }}
         />
 
-        {/* Due time display and progress bar at top center */}
+        {/* Due date countdown and progress bar */}
         {task.dueDate && (
           <div className="flex flex-col items-center mb-1">
-            {/* Time remaining display */}
+            {/* Countdown timer */}
             <span className="text-xs font-semibold flex items-center relative min-w-[100px] mb-2">
-              {/* Time remaining background progress bar */}
+              {/* Progress bar background */}
               {(() => {
                 const due = new Date(task.dueDate);
                 const created = new Date(task.createdAt);
-                const now = currentTime; // Use the real-time updated currentTime
+                const now = currentTime; // Use real-time updated time
 
-                // Calculate in minutes for more granular control
+                // Calculate progress in minutes for better accuracy
                 const msPerMinute = 60 * 1000;
                 const totalMinutes = Math.max(
                   Math.round((due - created) / msPerMinute),
@@ -123,10 +123,10 @@ const TaskItem = memo(
           </div>
         )}
 
-        {/* Subtask progress bar - always show if there are subtasks */}
+        {/* Subtask progress bar */}
         <SubtaskProgressBar show={hasSubtasks} percent={subtaskProgress} />
 
-        {/* Main task content pushed down */}
+        {/* Main task content */}
         <div className="flex justify-between items-start">
           <div className="flex gap-3">
             <div className="relative">
@@ -135,7 +135,7 @@ const TaskItem = memo(
                 checked={task.completed}
                 onChange={async () => {
                   const newCompleted = !task.completed;
-                  // Play sound based on the new state
+                  // Play sound when toggling
                   if (newCompleted) {
                     await soundManager.playCheckSound();
                   } else {
@@ -165,7 +165,7 @@ const TaskItem = memo(
             </p>
           </div>
           <div className="flex gap-4 items-center">
-            {/* Calendar button */}
+            {/* Due date button */}
             <button
               className={`flex items-center justify-center transition p-0.5 ml-2.5 ${
                 task.completed || isUpdating
@@ -185,9 +185,9 @@ const TaskItem = memo(
                 viewBox="0 0 24 24"
                 strokeWidth={2}
               >
-                {/* Calendar base */}
+                {/* Calendar icon */}
                 <rect x="3" y="4" width="18" height="18" rx="2" />
-                {/* Calendar top with dots */}
+                {/* Calendar header */}
                 <rect
                   x="3"
                   y="4"
@@ -201,7 +201,7 @@ const TaskItem = memo(
                 <circle cx="7" cy="7" r="1" fill="currentColor" />
                 <circle cx="11" cy="7" r="1" fill="currentColor" />
                 <circle cx="15" cy="7" r="1" fill="currentColor" />
-                {/* Calendar lines for days */}
+                {/* Calendar grid lines */}
                 <line
                   x1="3"
                   y1="10"
@@ -261,7 +261,7 @@ const TaskItem = memo(
               </svg>
             </button>
 
-            {/* Share button - only show for non-shared tasks */}
+            {/* Share button - only for original tasks */}
             {!task.isShared && (
               <button
                 className={`flex items-center justify-center transition p-0.5 ${
@@ -291,7 +291,7 @@ const TaskItem = memo(
               </button>
             )}
 
-            {/* Delete button for original tasks, Unlink button for shared tasks */}
+            {/* Delete button for original tasks, unlink for shared tasks */}
             {task.isShared ? (
               <button
                 onClick={() => !isUpdating && onUnlinkTask(task._id)}
@@ -341,7 +341,7 @@ const TaskItem = memo(
             )}
           </div>
         </div>
-        {/* Subtasks accordion and add form */}
+        {/* Subtasks section */}
         <SubtaskList
           task={task}
           subtasksOpen={subtasksOpen}
@@ -356,13 +356,13 @@ const TaskItem = memo(
           isUpdating={isUpdating}
         />
 
-        {/* Task metadata - only show if there's shared content */}
+        {/* Task sharing info */}
         {(task.isShared && task.originalCreator) ||
         (!task.isShared && task.sharedWith && task.sharedWith.length > 0) ? (
           <div className="flex justify-end items-center mt-3 pt-2 border-t border-gray-200">
-            {/* Right side - shared task info and share count */}
+            {/* Sharing details */}
             <div className="flex items-center text-xs text-gray-500">
-              {/* Shared task info */}
+              {/* Show who shared this task */}
               {task.isShared && task.originalCreator && (
                 <span>
                   From{" "}
@@ -373,7 +373,7 @@ const TaskItem = memo(
                 </span>
               )}
 
-              {/* Share count for original tasks */}
+              {/* Show how many people this task is shared with */}
               {!task.isShared &&
                 task.sharedWith &&
                 task.sharedWith.length > 0 && (
@@ -398,13 +398,13 @@ const TaskItem = memo(
           </div>
         ) : null}
 
-        {/* Share Task Popup */}
+        {/* Share task popup */}
         <ShareTaskPopup
           isOpen={showSharePopup}
           onClose={() => setShowSharePopup(false)}
           task={task}
           onShareSuccess={() => {
-            // Refresh tasks or show success message
+            // Task shared successfully
           }}
         />
       </div>
